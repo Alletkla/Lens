@@ -7,11 +7,15 @@ import processing.core.PVector
 
 class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApplet() {
     var MidPoint: PVector
-    var MidPointCircle1: PVector? = null
-    var MidPointCircle2: PVector? = null
+    lateinit var MidPointCircle1: PVector
+
+    /**
+     * Mittelpunkt für Kreis, der Kreisbogen auf der linken Seite schlägt.
+     */
+    lateinit var MidPointCircle2: PVector
     var XPoint1: PVector? = null
     var XPoint2: PVector? = null
-    var LensSystem: RefSystem? = null
+    lateinit var lensSystem: RefSystem
     var nLens = 2.5.toFloat()
     var nOutside = 1.0.toFloat()
     var r2: Float                   //Radius of the lens half
@@ -41,7 +45,7 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
         if (r1 + r2 <= d) {
             return false
         }
-        LensSystem = RefSystem(MidPointCircle2, MidPointCircle1, MidPoint)
+        lensSystem = RefSystem(MidPointCircle2, MidPointCircle1, MidPoint)
         MidToMid = MidPointCircle1!!.copy().sub(MidPointCircle2).mag()
         //x is the length from middlePoint of Circle 1 to the cross point lot to Lens Axis
         x = (pow(r1, 2F) + pow(MidToMid, 2F) - pow(r2, 2F)) / (2 * MidToMid)
@@ -65,13 +69,13 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
 
     fun renderHelps(renderContext: PGraphics) {
         renderFocalLength(renderContext)
-        LensSystem?.render(renderContext)
+        lensSystem?.render(renderContext)
         renderContext.endDraw()
     }
 
     fun renderFocalLength(pgLens: PGraphics) {
-        val x: Float = MidPoint.x + LensSystem!!.e1.x * (1 / Brechwert)
-        val y: Float = MidPoint.y + LensSystem!!.e1.y * (1 / Brechwert)
+        val x: Float = MidPoint.x + lensSystem!!.e1.x * (1 / Brechwert)
+        val y: Float = MidPoint.y + lensSystem!!.e1.y * (1 / Brechwert)
         pgLens.fill(0)
         pgLens.beginDraw()
         pgLens.circle(x, y, 5f)
@@ -87,9 +91,6 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
     }
 
     fun renderGlas(render_helps: Boolean, renderContext: PGraphics): Boolean {
-        if (!calcCrossPoints()) {
-            return false
-        }
         if (render_helps) {
             renderHelps(renderContext)
         }
@@ -161,5 +162,6 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
         MidPoint.y = yPos.toFloat()
         calcRefractionIndex()
         setCircles(d, r1)
+        if (!calcCrossPoints()) throw Exception("keine Schnittpunkte für die Linsenkreise gefunden")
     }
 }

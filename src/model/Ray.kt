@@ -6,8 +6,6 @@ import processing.core.PApplet.radians
 import processing.core.PVector
 import java.lang.Math.*
 import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sin
 
 
@@ -49,12 +47,12 @@ class Ray(xstart: Float, ystart: Float, temp_speed: Float){
 
     fun intersectsLensPlane(lens: Lens): Boolean {
         val mRay = (direction.y / direction.x).toDouble() //Anstieg des Strahls
-        val mLensPlane: Float = lens.LensSystem!!.e2.y / lens.LensSystem!!.e2.x //Anstieg der Linsenebene
+        val mLensPlane: Float = lens.lensSystem!!.e2.y / lens.lensSystem!!.e2.x //Anstieg der Linsenebene
 
         Lens_plane_intersect = PVector()
         //Berechnung des Schnittpunkts im Linsensystem und daher Addition der x-Koordinate des Linsensystems notwendig
         Lens_plane_intersect!!.x =
-            (((lens.LensSystem!!.position.y - start.y) / (mRay - mLensPlane) + lens.LensSystem!!.position.x).toFloat())
+            (((lens.lensSystem!!.position.y - start.y) / (mRay - mLensPlane) + lens.lensSystem!!.position.x).toFloat())
         Lens_plane_intersect!!.y = (mRay * Lens_plane_intersect!!.x + start.y).toFloat()
 
 
