@@ -16,7 +16,7 @@ class ViewPort() : PApplet(){
     }
 
     override fun setup() {
-        frameRate(500F)
+        frameRate(10F)
         textFont(Settings.font, 20f)         //load Font instead of create improves Performance factor 150
 
         createButtons()
@@ -109,6 +109,7 @@ class ViewPort() : PApplet(){
                 currentRay!!.refracted_ray!!.render(this)
                 currentRay = currentRay.refracted_ray!!
             }
+            text(ray.intersectsLensPlane(lens).toString(), ray.start.x, ray.start.y)
         }
 
     }
@@ -133,7 +134,7 @@ class ViewPort() : PApplet(){
 //            } else {
                 rayList[rayList.size-1].calcDirection(mouseX.toFloat(), mouseY.toFloat())
 //            }
-            rayList[rayList.size-1].intersect_lens(lens)
+            rayList[rayList.size-1].intersectsLensPlane(lens)
             rayList[rayList.size-1].render(this)
         }
     }

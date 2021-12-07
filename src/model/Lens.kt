@@ -53,6 +53,16 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
         return true
     }
 
+    fun renderAccessories(renderContext: PGraphics){
+        //KreisMittelpunkt der Bogen nach rechts Schlägt
+        renderContext.fill(0)
+        renderContext.circle(MidPointCircle1!!.x, MidPointCircle1!!.y, 5f)
+
+        //KreisMittelpunkt der Bogen nach links schlägt
+        renderContext.fill(0)
+        renderContext.circle(MidPointCircle2!!.x, MidPointCircle2!!.y, 5f)
+    }
+
     fun renderHelps(renderContext: PGraphics) {
         renderFocalLength(renderContext)
         LensSystem?.render(renderContext)
@@ -70,10 +80,10 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
     }
 
     fun renderLabel(label: String?, posX: Float, posY: Float, renderContext: PGraphics) {
-        val pretextalign: Int = renderContext.textAlign
+        val preTextAlign: Int = renderContext.textAlign
         renderContext.textAlign(CENTER, TOP)
         renderContext.text(label, posX, posY + 5)
-        renderContext.textAlign(pretextalign)
+        renderContext.textAlign(preTextAlign)
     }
 
     fun renderGlas(render_helps: Boolean, renderContext: PGraphics): Boolean {
@@ -103,17 +113,10 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
             radians(180 + angleToXPoint)
         )
 
-        //Kreis der Bogen nach rechts Schlägt
-        renderContext.fill(color(255, 0, 0))
-        renderContext.circle(MidPointCircle1!!.x, MidPointCircle1!!.y, 5f)
-
-        //Kreis der Bogen nach links schlägt
         renderContext.fill(255)
-        renderContext.circle(MidPointCircle2!!.x, MidPointCircle2!!.y, 5f)
-
         //Kreise an Schnittpunkten der Linsenkreise
-        renderContext.circle(MidPointCircle1!!.x + x, MidPointCircle1!!.y + y1, 10f)
-        renderContext.circle(MidPointCircle1!!.x + x, MidPointCircle1!!.y + y2, 10f)
+        renderContext.circle(MidPointCircle1!!.x + x, MidPointCircle1!!.y + y1, 8f)
+        renderContext.circle(MidPointCircle1!!.x + x, MidPointCircle1!!.y + y2, 8f)
 
         renderContext.endDraw()
         return true

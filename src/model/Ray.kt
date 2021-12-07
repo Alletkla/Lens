@@ -47,21 +47,24 @@ class Ray(xstart: Float, ystart: Float, temp_speed: Float){
         direction.normalize()
     }
 
-    fun intersect_lens(lens: Lens): Boolean {
+    fun intersectsLensPlane(lens: Lens): Boolean {
         val mRay = (direction.y / direction.x).toDouble() //Anstieg des Strahls
-        val mLens: Float = lens.LensSystem!!.e2.y / lens.LensSystem!!.e2.x
+        val mLensPlane: Float = lens.LensSystem!!.e2.y / lens.LensSystem!!.e2.x //Anstieg der Linsenebene
+
         Lens_plane_intersect = PVector()
         //Berechnung des Schnittpunkts im Linsensystem und daher Addition der x-Koordinate des Linsensystems notwendig
         Lens_plane_intersect!!.x =
-            (((lens.LensSystem!!.position.y - start.y) / (mRay - mLens) + lens.LensSystem!!.position.x).toFloat())
+            (((lens.LensSystem!!.position.y - start.y) / (mRay - mLensPlane) + lens.LensSystem!!.position.x).toFloat())
         Lens_plane_intersect!!.y = (mRay * Lens_plane_intersect!!.x + start.y).toFloat()
+
+
         val directionToXPoint = PVector()
-        directionToXPoint[Lens_plane_intersect!!.x] = Lens_plane_intersect!!.y
+        directionToXPoint.set(Lens_plane_intersect!!.x, Lens_plane_intersect!!.y)
         directionToXPoint.sub(end).normalize()
         return directionToXPoint.dot(direction) != -directionToXPoint.mag() * direction.mag()
     }
 
-    fun behind_lense_plane(): Boolean {
+    fun behindLensPlane(): Boolean {
         val directionToXPoint = PVector()
         directionToXPoint.set(Lens_plane_intersect)
         directionToXPoint.sub(end).normalize()
@@ -114,46 +117,46 @@ class Ray(xstart: Float, ystart: Float, temp_speed: Float){
         }
     }
 
-    fun collide(lens: Lens): Boolean {
-        if (!inLens && Lens_plane_intersect == null) {
-            return false
-        }
-        if (!inLens && behind_lense_plane()) {
-            return false
-        }
-
-        //TODO: irgendwie in den Konstruktor bringen.
-        BezMid = PVector()
-        val radius: Float
-        radius = if (inLens) {
-            BezMid!!.set(lens.MidPointCircle1)
-            lens.r1
-        } else {
-            BezMid!!.set(lens.MidPointCircle2)
-            lens.r2
-        }
-        distance = end.copy().add(direction).dist(BezMid)
-        val dist_min_r2: Int = ((end.dist(BezMid) - radius) * 2).roundToInt()
-        val totest: Boolean
-        totest = if (inLens) {
-            distance > radius
-        } else {
-            distance < radius
-        }
-        if (totest && dist_min_r2 != 0) {
-            val EndToMid = PVector()
-            EndToMid.set(end).sub(BezMid)
-            val dotEndToMidDirection = EndToMid.dot(direction).toDouble()
-            val lambda = -dotEndToMidDirection - kotlin.math.sqrt(
-                dotEndToMidDirection.pow(2.0) - EndToMid.mag().toDouble().pow(2.0) + radius.toDouble().pow(2.0)
-            )
-            direction.mult(lambda.toFloat())
-            return true
-        } else if (dist_min_r2 == 0) {
-            return true
-        }
-        return false
-    }
+//    fun collide(lens: Lens): Boolean {
+//        if (!inLens && Lens_plane_intersect == null) {
+//            return false
+//        }
+//        if (!inLens && behindLensPlane()) {
+//            return false
+//        }
+//
+//        //TODO: irgendwie in den Konstruktor bringen.
+//        BezMid = PVector()
+//        val radius: Float
+//        radius = if (inLens) {
+//            BezMid!!.set(lens.MidPointCircle1)
+//            lens.r1
+//        } else {
+//            BezMid!!.set(lens.MidPointCircle2)
+//            lens.r2
+//        }
+//        distance = end.copy().add(direction).dist(BezMid)
+//        val dist_min_r2: Int = ((end.dist(BezMid) - radius) * 2).roundToInt()
+//        val totest: Boolean
+//        totest = if (inLens) {
+//            distance > radius
+//        } else {
+//            distance < radius
+//        }
+//        if (totest && dist_min_r2 != 0) {
+//            val EndToMid = PVector()
+//            EndToMid.set(end).sub(BezMid)
+//            val dotEndToMidDirection = EndToMid.dot(direction).toDouble()
+//            val lambda = -dotEndToMidDirection - kotlin.math.sqrt(
+//                dotEndToMidDirection.pow(2.0) - EndToMid.mag().toDouble().pow(2.0) + radius.toDouble().pow(2.0)
+//            )
+//            direction.mult(lambda.toFloat())
+//            return true
+//        } else if (dist_min_r2 == 0) {
+//            return true
+//        }
+//        return false
+//    }
 
     //renders the ray to the Screen
     fun render(renderContext : PApplet) {

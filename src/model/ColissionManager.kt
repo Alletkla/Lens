@@ -6,12 +6,10 @@ import kotlin.math.roundToInt
 
 object ColissionManager {
     fun rayCollidesLens(ray: Ray, lens: Lens): Boolean {
-
-
         if (!ray.inLens && ray.Lens_plane_intersect == null) {
             return false
         }
-        if (!ray.inLens && ray.behind_lense_plane()) {
+        if (!ray.inLens && ray.behindLensPlane()) {
             return false
         }
         ray.BezMid = PVector()
@@ -23,6 +21,7 @@ object ColissionManager {
             lens.r2
         }
         ray.distance = ray.end.copy().add(ray.direction).dist(ray.BezMid)
+
         val distMinR2: Int = ((ray.end.dist(ray.BezMid) - radius) * 2).roundToInt()
         val toTest: Boolean = if (ray.inLens) {
             ray.distance > radius
