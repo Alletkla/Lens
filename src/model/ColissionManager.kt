@@ -6,6 +6,18 @@ import kotlin.math.roundToInt
 
 object ColissionManager {
     fun rayCollidesLens(ray: Ray, lens: Lens): Boolean {
+//        var referenceCircleMidPoint = PVector()
+//
+//        if (ray.end.x < lens.lensSystem.position.x){
+//            referenceCircleMidPoint = lens.MidPointCircle2 //Wenn Strahl links von der Linse ist, nehme Kreis der nach Links Bogen schlägt
+//        }else{
+//            referenceCircleMidPoint = lens.MidPointCircle1
+//        }
+//
+//        if (ray.end.dist(referenceCircleMidPoint) < lens.r2){
+//            ray.inLens = true
+//            return true
+//        }
         if (!ray.inLens && ray.Lens_plane_intersect == null) {
             return false
         }
