@@ -6,8 +6,6 @@ import processing.core.PApplet.radians
 import processing.core.PVector
 import java.lang.Math.*
 import kotlin.math.cos
-import kotlin.math.pow
-import kotlin.math.roundToInt
 import kotlin.math.sin
 
 
@@ -16,13 +14,14 @@ class Ray(xstart: Float, ystart: Float, temp_speed: Float){
     var end: PVector
     var direction: PVector
     var Lens_plane_intersect: PVector? = null
-    var BezMid: PVector? = null
+    lateinit var referenceCircle: Circle
     var speed: Float
-    var refraction_angle = 0f
-    var incidence_angle = 0f
-    var distance = 0f
     var inLens = false
     var refracted_ray: Ray? = null
+
+    enum class Orientation{
+        LEFT_TO_RIGHT, RIGHT_TO_LEFT
+    }
 
     //calc Direction and save it into Object
     fun calcDirection(xCord: Float, yCord: Float) {
@@ -34,6 +33,13 @@ class Ray(xstart: Float, ystart: Float, temp_speed: Float){
         direction.set(xCord,yCord)
         direction.sub(start)
         direction.normalize()
+    }
+
+    fun getOrientation() : Orientation{
+        if (direction.dot(PVector(1F,0F)) > 0){
+            return Orientation.LEFT_TO_RIGHT
+        }
+        return Orientation.RIGHT_TO_LEFT
     }
 
     //berechnet den neuen Endpunkt, wenn nicht kollidiert
@@ -48,115 +54,67 @@ class Ray(xstart: Float, ystart: Float, temp_speed: Float){
     }
 
     fun intersectsLensPlane(lens: Lens): Boolean {
-        val mRay = (direction.y / direction.x).toDouble() //Anstieg des Strahls
-        val mLensPlane: Float = lens.LensSystem!!.e2.y / lens.LensSystem!!.e2.x //Anstieg der Linsenebene
-
-        Lens_plane_intersect = PVector()
-        //Berechnung des Schnittpunkts im Linsensystem und daher Addition der x-Koordinate des Linsensystems notwendig
-        Lens_plane_intersect!!.x =
-            (((lens.LensSystem!!.position.y - start.y) / (mRay - mLensPlane) + lens.LensSystem!!.position.x).toFloat())
-        Lens_plane_intersect!!.y = (mRay * Lens_plane_intersect!!.x + start.y).toFloat()
-
-
-        val directionToXPoint = PVector()
-        directionToXPoint.set(Lens_plane_intersect!!.x, Lens_plane_intersect!!.y)
-        directionToXPoint.sub(end).normalize()
-        return directionToXPoint.dot(direction) != -directionToXPoint.mag() * direction.mag()
-    }
-
-    fun behindLensPlane(): Boolean {
-        val directionToXPoint = PVector()
-        directionToXPoint.set(Lens_plane_intersect)
-        directionToXPoint.sub(end).normalize()
-        return directionToXPoint.dot(direction) == -directionToXPoint.mag() * direction.mag()
-    }
-
-    fun refract(lens: Lens) {
-        //TODO: Alle Winkel in Radians;
-        if (refraction_angle == 0f) {
-            var temp1 = PVector()
-            var temp2 = PVector()
-            temp1.set(lens.lot)
-            val dot = temp1.rotate(PI.toFloat()).dot(direction).toDouble()
-            //dot = Math.abs(lens.lot.dot(direction));
-            val lotmag: Float = lens.lot!!.mag()
-            val directionmag = direction.mag().toDouble()
-            incidence_angle = degrees(kotlin.math.acos((dot / (lotmag * directionmag)).toFloat()).toFloat())
-            if (temp1.y / temp1.x < direction.y / direction.x) {
-                incidence_angle = -incidence_angle
-            }
-            refraction_angle = if (!inLens) {
-                degrees(kotlin.math.asin(kotlin.math.sin(radians(incidence_angle)) * lens.nOutside / lens.nLens).toFloat())
-            } else {
-                degrees(kotlin.math.asin(sin(radians(incidence_angle)) * lens.nLens / lens.nOutside).toFloat())
-            }
-
-            refracted_ray = Ray(end.x, end.y, speed)
-            refracted_ray!!.end.set(refracted_ray!!.start)
-            val refSysRefraction: RefSystem
-            if (inLens) {
-                refSysRefraction = RefSystem(end, BezMid, end)
-            } else {
-                refSysRefraction = RefSystem(BezMid, end, end)
-            }
-            //refSysRefraction.render(Color(255, 0, 0), 50)
-            val newRayLength = 10f
-            val yDirection: Float = sin(radians(refraction_angle)) * newRayLength
-            val xDirection: Float = cos(radians(refraction_angle)) * newRayLength
-            temp1 = PVector()
-            temp2 = PVector()
-            temp1.set(refSysRefraction.position)
-            temp2.set(temp1)
-            temp2.add(refSysRefraction.e1.copy().mult(xDirection))
-            temp2.add(refSysRefraction.e2.copy().mult(yDirection))
-
-            //circle(temp2.x, temp2.y, 5)
-            refracted_ray!!.direction.set(temp2.sub(temp1))
-            refracted_ray!!.direction.normalize()
-            refracted_ray!!.inLens = !inLens
+        return when (this.getOrientation()) {
+            Orientation.LEFT_TO_RIGHT -> this.start.x < lens.lensSystem.position.x
+            Orientation.RIGHT_TO_LEFT -> this.start.x > lens.lensSystem.position.y
         }
     }
 
-//    fun collide(lens: Lens): Boolean {
-//        if (!inLens && Lens_plane_intersect == null) {
-//            return false
-//        }
-//        if (!inLens && behindLensPlane()) {
-//            return false
-//        }
-//
-//        //TODO: irgendwie in den Konstruktor bringen.
-//        BezMid = PVector()
-//        val radius: Float
-//        radius = if (inLens) {
-//            BezMid!!.set(lens.MidPointCircle1)
-//            lens.r1
-//        } else {
-//            BezMid!!.set(lens.MidPointCircle2)
-//            lens.r2
-//        }
-//        distance = end.copy().add(direction).dist(BezMid)
-//        val dist_min_r2: Int = ((end.dist(BezMid) - radius) * 2).roundToInt()
-//        val totest: Boolean
-//        totest = if (inLens) {
-//            distance > radius
-//        } else {
-//            distance < radius
-//        }
-//        if (totest && dist_min_r2 != 0) {
-//            val EndToMid = PVector()
-//            EndToMid.set(end).sub(BezMid)
-//            val dotEndToMidDirection = EndToMid.dot(direction).toDouble()
-//            val lambda = -dotEndToMidDirection - kotlin.math.sqrt(
-//                dotEndToMidDirection.pow(2.0) - EndToMid.mag().toDouble().pow(2.0) + radius.toDouble().pow(2.0)
-//            )
-//            direction.mult(lambda.toFloat())
-//            return true
-//        } else if (dist_min_r2 == 0) {
-//            return true
-//        }
-//        return false
-//    }
+    fun willIntersectLensPlane(lens : Lens) : Boolean {
+        return when (this.getOrientation()) {
+            Orientation.LEFT_TO_RIGHT -> this.end.x < lens.lensSystem.position.x
+            Orientation.RIGHT_TO_LEFT -> this.end.x > lens.lensSystem.position.y
+        }
+    }
+
+    fun getMovementVector() : PVector{
+        return PVector().set(this.direction).mult(this.speed)
+    }
+
+    fun refract(lens: Lens, renderContext: PApplet) {
+        if (this.refracted_ray == null) {
+
+            val lot = if (inLens){
+                PVector().set(this.end).sub(this.referenceCircle.midPoint)  //Einfallslot
+            }else {
+                PVector().set(this.referenceCircle.midPoint).sub(this.end)  //Einfallslot
+            }
+
+
+            //renderContext.line(this.end.x, this.end.y, this.end.x-lot.x, this.end.y-lot.y)
+
+            //Einfallswinkel \alpha .... \vec{a} \dot \vec{b} = a * b * cos \alpha
+            //in Radians
+            val angleOfIncidence = kotlin.math.acos(lot.dot(direction)/(direction.mag()*lot.mag()))
+
+                //n_2/n_1 = sin(a)/sin(b)
+            val angleOfRefraction = if (inLens){
+                kotlin.math.asin(sin(angleOfIncidence) * lens.nLens / lens.nOutside)
+            }else{
+                kotlin.math.asin(sin(angleOfIncidence) * lens.nOutside / lens.nLens)
+            }
+
+            //copy lot and rotate by angle of refraction
+
+            //neglect the difference in speed of light.
+            refracted_ray = Ray(end.x, end.y, speed)
+
+            //Drehmatrix ist cos()  -sin()
+            //               sin()   cos()
+            //und mathematischer Drehsinn ist gegen den Uhrzeiger → Winkel zum Drehen = -Brechwinkel
+            //Achtung!: Um zwei Matrizen miteinander multiplizieren zu können, muss die Spaltenzahl der ersten Matrix mit der Zeilenzahl der zweiten Matrix übereinstimmen
+            //Ergo: Matrix * Vektor
+
+            val rotationDirection = if (lot.y > 0) RotDirection.CLOCKWISE else RotDirection.COUNTERCLOCKWISE
+
+            refracted_ray!!.direction = PVector(lot.x*cos(angleOfRefraction*rotationDirection.corrector)-lot.y*sin(angleOfRefraction*rotationDirection.corrector),
+                                                lot.x*sin(angleOfRefraction*rotationDirection.corrector)+lot.y*cos(angleOfRefraction*rotationDirection.corrector)
+                                                )
+            refracted_ray!!.direction.normalize()
+
+            refracted_ray!!.inLens = !inLens
+        }
+    }
 
     //renders the ray to the Screen
     fun render(renderContext : PApplet) {

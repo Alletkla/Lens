@@ -5,13 +5,14 @@ import processing.core.PGraphics
 
 import processing.core.PVector
 import java.awt.Color
+import kotlin.math.PI
 
 
 /*
 Class that represents an Reference System
 given that a - b is positive
 */
-class RefSystem(a: PVector?, b: PVector?, position: PVector?) : PApplet(){
+class RefSystem(a: PVector?, b: PVector?, position: PVector?){
   var e1: PVector
   var e2: PVector
   var position: PVector = PVector()
@@ -42,6 +43,6 @@ class RefSystem(a: PVector?, b: PVector?, position: PVector?) : PApplet(){
     e1.normalize()
     e2 = PVector()
     e2.set(e1)
-    e2.rotate(-PI / 2)
+    e2.rotate((PI / 2).toFloat())
   }
 }

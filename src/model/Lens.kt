@@ -4,30 +4,38 @@ import processing.core.PApplet
 import processing.core.PGraphics
 import processing.core.PVector
 
-
-class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApplet() {
-    var MidPoint: PVector
-    var MidPointCircle1: PVector? = null
-    var MidPointCircle2: PVector? = null
-    var XPoint1: PVector? = null
-    var XPoint2: PVector? = null
-    var LensSystem: RefSystem? = null
+/**
+ * Left means "to the light source" right means further from the light source
+ */
+class Lens(xPos: Int, yPos: Int, var d: Float, r: Float, n: Float) : PApplet() {
+    var midPoint: PVector
+    lateinit var circleLeft : Circle
+    lateinit var circleRight : Circle
+    lateinit var lensSystem: RefSystem
     var nLens = 2.5.toFloat()
     var nOutside = 1.0.toFloat()
-    var r2: Float                   //Radius of the lens half
-    var angleToXPoint = 0f
+
     var x = 0f
     var y1 = 0f
     var y2 = 0f
-    var MidToMid = 0f
-    var Brechwert = 0f
+    var midToMid = 0f
+    var refractionIndex = 0f
     var lot: PVector? = null
+
+    //all to the Crospoints of both Circles
+    var angleToXPoint : Float = 0F
+    lateinit var xPoint1: PVector
+    lateinit var xPoint2: PVector
 
     /**
      * see https://de.wikipedia.org/wiki/Linsenschleiferformel
+     * the signs are equal if the middle points are of the same side of the lens (konvex-konkav)
+     *
+     * @param r1 The radius of the curvature with sign closer to the light source
+     * @param r2 The radius of the curvature with sign farther from the light source
      */
-    fun calcRefractionIndex() {
-        Brechwert = (nLens - nOutside) / nOutside * (1 / r1 + 1 / r2) - pow(
+    fun calcRefractionIndex(r1 : Float, r2 : Float) : Float {
+        return (nLens - nOutside) / nOutside * (1 / r1 + 1 / r2) - pow(
             nLens - nOutside,
             2F
         ) * d / (nLens * r1 * r2)
@@ -36,42 +44,42 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
     /**
      * see https://mathworld.wolfram.com/Circle-CircleIntersection.html
      */
-    fun calcCrossPoints(): Boolean {
+    private fun calcCrossPoints(): Boolean {
         //check if circles will cut each other on the first half
-        if (r1 + r2 <= d) {
+        if (circleRight.r + circleLeft.r <= d) {
             return false
         }
-        LensSystem = RefSystem(MidPointCircle2, MidPointCircle1, MidPoint)
-        MidToMid = MidPointCircle1!!.copy().sub(MidPointCircle2).mag()
+        lensSystem = RefSystem(circleLeft.midPoint, circleRight.midPoint, midPoint)
+        midToMid = circleRight.midPoint.copy().sub(circleLeft.midPoint).mag()
         //x is the length from middlePoint of Circle 1 to the cross point lot to Lens Axis
-        x = (pow(r1, 2F) + pow(MidToMid, 2F) - pow(r2, 2F)) / (2 * MidToMid)
-        y1 = sqrt(pow(r1, 2F) - pow(x, 2F))
+        x = (pow(circleRight.r, 2F) + pow(midToMid, 2F) - pow(circleLeft.r, 2F)) / (2 * midToMid)
+        y1 = sqrt(pow(circleRight.r, 2F) - pow(x, 2F))
         y2 = -y1
-        XPoint1 = PVector(x, y1)
-        XPoint2 = PVector(x, y2)
-        angleToXPoint = 90 - degrees(asin(x / r1))
+        xPoint1 = PVector(x, y1)
+        xPoint2 = PVector(x, y2)
+        angleToXPoint = 90 - degrees(asin(x / circleRight.r))
         return true
     }
 
     fun renderAccessories(renderContext: PGraphics){
         //KreisMittelpunkt der Bogen nach rechts Schlägt
         renderContext.fill(0)
-        renderContext.circle(MidPointCircle1!!.x, MidPointCircle1!!.y, 5f)
+        renderContext.circle(circleRight.midPoint.x, circleRight.midPoint.y, 5f)
 
         //KreisMittelpunkt der Bogen nach links schlägt
         renderContext.fill(0)
-        renderContext.circle(MidPointCircle2!!.x, MidPointCircle2!!.y, 5f)
+        renderContext.circle(circleLeft.midPoint.x, circleLeft.midPoint.y, 5f)
     }
 
     fun renderHelps(renderContext: PGraphics) {
         renderFocalLength(renderContext)
-        LensSystem?.render(renderContext)
+        lensSystem.render(renderContext)
         renderContext.endDraw()
     }
 
     fun renderFocalLength(pgLens: PGraphics) {
-        val x: Float = MidPoint.x + LensSystem!!.e1.x * (1 / Brechwert)
-        val y: Float = MidPoint.y + LensSystem!!.e1.y * (1 / Brechwert)
+        val x: Float = midPoint.x + lensSystem.e1.x * (1 / refractionIndex)
+        val y: Float = midPoint.y + lensSystem.e1.y * (1 / refractionIndex)
         pgLens.fill(0)
         pgLens.beginDraw()
         pgLens.circle(x, y, 5f)
@@ -87,9 +95,6 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
     }
 
     fun renderGlas(render_helps: Boolean, renderContext: PGraphics): Boolean {
-        if (!calcCrossPoints()) {
-            return false
-        }
         if (render_helps) {
             renderHelps(renderContext)
         }
@@ -97,49 +102,50 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
         //Linsenglas
         renderContext.noFill()
         renderContext.arc(
-            MidPoint.x - r1 + d / 2,
-            MidPoint.y,
-            r1 * 2,
-            r1 * 2,
+            midPoint.x - circleRight.r + d / 2,
+            midPoint.y,
+            circleRight.r * 2,
+            circleRight.r * 2,
             radians(-angleToXPoint),
             radians(angleToXPoint)
         )
         renderContext.arc(
-            MidPoint.x + r2 - d / 2,
-            MidPoint.y,
-            r2 * 2,
-            r2 * 2,
+            midPoint.x + circleLeft.r - d / 2,
+            midPoint.y,
+            circleLeft.r * 2,
+            circleLeft.r * 2,
             radians(180 - angleToXPoint),
             radians(180 + angleToXPoint)
         )
 
         renderContext.fill(255)
         //Kreise an Schnittpunkten der Linsenkreise
-        renderContext.circle(MidPointCircle1!!.x + x, MidPointCircle1!!.y + y1, 8f)
-        renderContext.circle(MidPointCircle1!!.x + x, MidPointCircle1!!.y + y2, 8f)
+        renderContext.circle(circleRight.midPoint.x + x, circleRight.midPoint.y + y1, 8f)
+        renderContext.circle(circleRight.midPoint.x + x, circleRight.midPoint.y + y2, 8f)
 
         renderContext.endDraw()
         return true
     }
 
-    fun setCircles(d_temp: Float, r1_temp: Float) {
-        d = d_temp
-        r1 = r1_temp
-        r2 = r1
-        MidPointCircle1 = PVector()
-        MidPointCircle2 = PVector()
+    private fun setCircles(d: Float, r: Float) {
+        val midPointCircle1 = PVector()
+        val midPointCircle2 = PVector()
 
         //Kreis 1 ist der nach rechts den Bogen schlägt
-        MidPointCircle1!!.x = MidPoint.x - r1 + d / 2
-        MidPointCircle1!!.y = MidPoint.y
+        midPointCircle1.x = midPoint.x - r + d / 2
+        midPointCircle1.y = midPoint.y
+
+        this.circleRight = Circle(midPointCircle1, r)
 
         //Kreis 2 ist der nach links den Bogen schlägt
-        MidPointCircle2!!.x = MidPoint.x + r1 - d / 2
-        MidPointCircle2!!.y = MidPoint.y
+        midPointCircle2.x = midPoint.x + r - d / 2
+        midPointCircle2.y = midPoint.y
+
+        this.circleLeft = Circle(midPointCircle2, r)
     }
 
-    fun renderLot(PointOnRadius: PVector) {
-        line(PointOnRadius.x, PointOnRadius.y, PointOnRadius.x + 50 * lot!!.x, PointOnRadius.y + 50 * lot!!.y)
+    fun renderLot(PointOnRadius: PVector, renderContext: PGraphics) {
+        renderContext.line(PointOnRadius.x, PointOnRadius.y, PointOnRadius.x + 50 * lot!!.x, PointOnRadius.y + 50 * lot!!.y)
     }
 
     fun setLot(PointOnRadius: PVector?, MidPoint: PVector?, innen: Boolean) {
@@ -154,12 +160,13 @@ class Lens(xPos: Int, yPos: Int, var d: Float, var r1: Float, n: Float) : PApple
     }
 
     init {
-        r2 = r1
         nLens = n
-        MidPoint = PVector()
-        MidPoint.x = xPos.toFloat()
-        MidPoint.y = yPos.toFloat()
-        calcRefractionIndex()
-        setCircles(d, r1)
+        midPoint = PVector()
+        midPoint.x = xPos.toFloat()
+        midPoint.y = yPos.toFloat()
+
+        refractionIndex = calcRefractionIndex(r, r)
+        setCircles(d, r)
+        if (!calcCrossPoints()) throw Exception("keine Schnittpunkte für die Linsenkreise gefunden")
     }
 }
