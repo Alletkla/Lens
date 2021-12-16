@@ -27,7 +27,7 @@ abstract class Button internal constructor(val container : PApplet, val x: Int, 
         container.text(lbl, (x + w / 2).toFloat(), (y + h / 2).toFloat())
     }
 
-    val isMouseInside: Boolean
+    private val isMouseInside: Boolean
         get() = (container.mouseX > x) and (container.mouseX < x + w) and (container.mouseY > y) and (container.mouseY < y + h)
 
     fun hasClicked(): Boolean {

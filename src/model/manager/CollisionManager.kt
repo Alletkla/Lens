@@ -1,5 +1,9 @@
-package model
+package model.manager
 
+import model.Circle
+import model.Lens
+import model.Ray
+import model.Side
 import processing.core.PGraphics
 import processing.core.PVector
 import kotlin.math.pow
@@ -50,7 +54,7 @@ object CollisionManager {
      * This method checks whether the given Ray collides with the given Lens and scales the Ray in such a way that
      * it seems that it hit the lens perfectly
      */
-    fun rayCollidesLens(ray: Ray, lens: Lens, drawingSurface : PGraphics): Boolean {
+    fun rayCollidesLens(ray: Ray, lens: Lens): Boolean {
         if (!ray.inLens && !ray.willIntersectLensPlane(lens)){
             return false
         }
@@ -81,6 +85,7 @@ object CollisionManager {
         )
         //Direction scaled to the Projection of Distance on the direction vector
         ray.direction = ray.direction.mult(distProjectionOnDirection.mag()).div(ray.speed)
+        ray.end.add(ray.direction.copy().mult(ray.speed))
         return true
     }
 }

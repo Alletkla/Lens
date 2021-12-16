@@ -9,20 +9,18 @@ import processing.core.PVector
  */
 class Lens(xPos: Int, yPos: Int, var d: Float, r: Float, n: Float) : PApplet() {
     var midPoint: PVector
-    lateinit var circleLeft : Circle
-    lateinit var circleRight : Circle
     lateinit var lensSystem: RefSystem
     var nLens = 2.5.toFloat()
     var nOutside = 1.0.toFloat()
-
-    var x = 0f
-    var y1 = 0f
-    var y2 = 0f
-    var midToMid = 0f
     var refractionIndex = 0f
-    var lot: PVector? = null
+    val focalLengthPoint1 : PVector by lazy{calcFocalLengthPoint(0)}
+    val focalLengthPoint2 : PVector by lazy{calcFocalLengthPoint(1)}
 
-    //all to the Crospoints of both Circles
+    lateinit var circleLeft : Circle
+    lateinit var circleRight : Circle
+    var midToMid = 0f
+
+    //all to the cross points of both Circles
     var angleToXPoint : Float = 0F
     lateinit var xPoint1: PVector
     lateinit var xPoint2: PVector
@@ -49,82 +47,27 @@ class Lens(xPos: Int, yPos: Int, var d: Float, r: Float, n: Float) : PApplet() {
         if (circleRight.r + circleLeft.r <= d) {
             return false
         }
-        lensSystem = RefSystem(circleLeft.midPoint, circleRight.midPoint, midPoint)
         midToMid = circleRight.midPoint.copy().sub(circleLeft.midPoint).mag()
         //x is the length from middlePoint of Circle 1 to the cross point lot to Lens Axis
-        x = (pow(circleRight.r, 2F) + pow(midToMid, 2F) - pow(circleLeft.r, 2F)) / (2 * midToMid)
-        y1 = sqrt(pow(circleRight.r, 2F) - pow(x, 2F))
-        y2 = -y1
+        val x = (pow(circleRight.r, 2F) + pow(midToMid, 2F) - pow(circleLeft.r, 2F)) / (2 * midToMid)
+        val y1 = sqrt(pow(circleRight.r, 2F) - pow(x, 2F))
+        val y2 = -y1
         xPoint1 = PVector(x, y1)
         xPoint2 = PVector(x, y2)
         angleToXPoint = 90 - degrees(asin(x / circleRight.r))
         return true
     }
 
-    fun renderAccessories(renderContext: PGraphics){
-        //KreisMittelpunkt der Bogen nach rechts Schlägt
-        renderContext.fill(0)
-        renderContext.circle(circleRight.midPoint.x, circleRight.midPoint.y, 5f)
-
-        //KreisMittelpunkt der Bogen nach links schlägt
-        renderContext.fill(0)
-        renderContext.circle(circleLeft.midPoint.x, circleLeft.midPoint.y, 5f)
-    }
-
-    fun renderHelps(renderContext: PGraphics) {
-        renderFocalLength(renderContext)
-        lensSystem.render(renderContext)
-        renderContext.endDraw()
-    }
-
-    fun renderFocalLength(pgLens: PGraphics) {
-        val x: Float = midPoint.x + lensSystem.e1.x * (1 / refractionIndex)
-        val y: Float = midPoint.y + lensSystem.e1.y * (1 / refractionIndex)
-        pgLens.fill(0)
-        pgLens.beginDraw()
-        pgLens.circle(x, y, 5f)
-        renderLabel("Brennweite", x, y, pgLens)
-        pgLens.endDraw()
-    }
-
-    fun renderLabel(label: String?, posX: Float, posY: Float, renderContext: PGraphics) {
-        val preTextAlign: Int = renderContext.textAlign
-        renderContext.textAlign(CENTER, TOP)
-        renderContext.text(label, posX, posY + 5)
-        renderContext.textAlign(preTextAlign)
-    }
-
-    fun renderGlas(render_helps: Boolean, renderContext: PGraphics): Boolean {
-        if (render_helps) {
-            renderHelps(renderContext)
+    private fun calcFocalLengthPoint(index : Int) : PVector{
+        return if (index == 0){
+            val x: Float = midPoint.x + lensSystem.e1.x * (1 / refractionIndex)
+            val y: Float = midPoint.y + lensSystem.e1.y * (1 / refractionIndex)
+            PVector(x,y)
+        }else{
+            val x: Float = midPoint.x - lensSystem.e1.x * (1 / refractionIndex)
+            val y: Float = midPoint.y - lensSystem.e1.y * (1 / refractionIndex)
+            PVector(x,y)
         }
-        renderContext.beginDraw()
-        //Linsenglas
-        renderContext.noFill()
-        renderContext.arc(
-            midPoint.x - circleRight.r + d / 2,
-            midPoint.y,
-            circleRight.r * 2,
-            circleRight.r * 2,
-            radians(-angleToXPoint),
-            radians(angleToXPoint)
-        )
-        renderContext.arc(
-            midPoint.x + circleLeft.r - d / 2,
-            midPoint.y,
-            circleLeft.r * 2,
-            circleLeft.r * 2,
-            radians(180 - angleToXPoint),
-            radians(180 + angleToXPoint)
-        )
-
-        renderContext.fill(255)
-        //Kreise an Schnittpunkten der Linsenkreise
-        renderContext.circle(circleRight.midPoint.x + x, circleRight.midPoint.y + y1, 8f)
-        renderContext.circle(circleRight.midPoint.x + x, circleRight.midPoint.y + y2, 8f)
-
-        renderContext.endDraw()
-        return true
     }
 
     private fun setCircles(d: Float, r: Float) {
@@ -142,21 +85,8 @@ class Lens(xPos: Int, yPos: Int, var d: Float, r: Float, n: Float) : PApplet() {
         midPointCircle2.y = midPoint.y
 
         this.circleLeft = Circle(midPointCircle2, r)
-    }
 
-    fun renderLot(PointOnRadius: PVector, renderContext: PGraphics) {
-        renderContext.line(PointOnRadius.x, PointOnRadius.y, PointOnRadius.x + 50 * lot!!.x, PointOnRadius.y + 50 * lot!!.y)
-    }
-
-    fun setLot(PointOnRadius: PVector?, MidPoint: PVector?, innen: Boolean) {
-        lot = PVector()
-        if (innen) {
-            lot!!.set(MidPoint)
-            lot!!.sub(PointOnRadius).normalize()
-        } else {
-            lot!!.set(PointOnRadius)
-            lot!!.sub(MidPoint).normalize()
-        }
+        lensSystem = RefSystem(circleRight.midPoint, circleLeft.midPoint, midPoint)
     }
 
     init {
