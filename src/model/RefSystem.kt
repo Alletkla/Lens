@@ -38,8 +38,8 @@ class RefSystem(a: PVector?, b: PVector?, position: PVector?){
   init {
     this.position.set(position)
     e1 = PVector()
-    e1.set(a)
-    e1.sub(b)
+    e1.set(b)
+    e1.sub(a)
     e1.normalize()
     e2 = PVector()
     e2.set(e1)
