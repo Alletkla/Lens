@@ -1,8 +1,10 @@
-package model
+package model.light
 
 import controller.Controller
+import model.Circle
+import model.Lens
+import model.RotDirection
 import model.manager.CollisionManager
-import processing.core.PApplet
 import processing.core.PVector
 import view.RenderContextProvider
 import java.awt.Color
@@ -10,10 +12,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 
-class Ray(val start: PVector, var direction: PVector, val speed: Float) {
+class Ray(val start: PVector, var direction: PVector, val speed: Float) : Light{
     var end: PVector = start.copy()
-    var Lens_plane_intersect: PVector? = null
-    lateinit var referenceCircle: Circle
+    lateinit var referenceCircle: Circle //TODO probably think about deleting this here and compute it everytime it is used (actually only 2 times)
     var inLens = false
     var refractedRay: Ray? = null
     var process = true
@@ -35,16 +36,15 @@ class Ray(val start: PVector, var direction: PVector, val speed: Float) {
         direction.normalize()
     }
 
-    fun getOrientation(): Orientation {
+    private fun getOrientation(): Orientation {
         if (direction.dot(PVector(1F, 0F)) > 0) {
             return Orientation.LEFT_TO_RIGHT
         }
         return Orientation.RIGHT_TO_LEFT
     }
 
-    //berechnet den neuen Endpunkt, wenn nicht kollidiert
-    //TODO:: must check on Rendering if it can move
-    fun move() {
+    //berechnet den neuen Endpunkt, wenn nicht, kollidiert
+    override fun move() {
         if (refractedRay == null) {
 
             end.add(direction.copy().mult(speed))

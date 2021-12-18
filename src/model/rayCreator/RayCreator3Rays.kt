@@ -1,7 +1,7 @@
 package model.rayCreator
 
 import model.Lens
-import model.Ray
+import model.light.Ray
 import processing.core.PVector
 
 class RayCreator3Rays(val lens: Lens) : ARayCreator() {

@@ -1,7 +1,7 @@
 package model.manager
 
 import model.Lens
-import model.Ray
+import model.light.Ray
 import model.rayCreator.RayCreator
 import model.rayCreator.RayCreatorAngle
 import processing.core.PVector
