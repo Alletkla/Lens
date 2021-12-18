@@ -3,9 +3,6 @@ package view
 import Settings
 import controller.Controller
 import model.Lens
-import model.Ray
-import model.RefSystem
-import model.manager.CollisionManager
 import model.manager.ObjectManager
 import model.objectRenderer.LensRenderer
 import model.objectRenderer.RayRenderer
@@ -16,7 +13,6 @@ import processing.core.PApplet
 import processing.core.PGraphics
 import processing.core.PVector
 import java.awt.Color
-import kotlin.reflect.jvm.internal.impl.load.kotlin.JvmType
 
 class ViewPort : PApplet() {
 
@@ -40,7 +36,6 @@ class ViewPort : PApplet() {
         pgLens = createGraphics(width, height)
         LensRenderer.renderContext = pgLens
         ObjectManager.addLens(Lens(width / 2, height / 2, 80F, 200F, 1.5F))
-
         ObjectManager.getLensList().forEach {LensRenderer.render(it)}
 
         LensRenderer.renderContext = this.g
@@ -69,7 +64,22 @@ class ViewPort : PApplet() {
 
     override fun draw() {
         surface.setTitle(frameRate.toInt().toString() + " fps")
-        render()
+
+        background(255)
+        text("X: $mouseX;Y: $mouseY", 50F, 25F)
+        image(pgLens, 0f, 0f)
+
+        Controller.processNextFrame()
+
+        for (b in ObjectManager.getButtonList()) {
+            b.display()
+        }
+
+        for (ray in ObjectManager.getRayList()) {
+            RayRenderer.render(ray)
+            //text(ray.intersectsLensPlane(lens).toString(), ray.start.x, ray.start.y)
+        }
+
     }
 
     // val BUTTONS = 3    used later for positioning all buttons accordingly
@@ -100,24 +110,6 @@ class ViewPort : PApplet() {
                 if (buttonOn) ObjectManager.setMode(RayCreator3Rays(ObjectManager.getLensList()[0])) else ObjectManager.setMode(RayCreatorAngle())
             }
         })
-    }
-
-    fun render() {
-        background(255)
-        text("X: $mouseX;Y: $mouseY", 50F, 25F)
-        image(pgLens, 0f, 0f)
-
-        Controller.processNextFrame()
-
-        for (b in ObjectManager.getButtonList()) {
-            b.display()
-        }
-
-        for (ray in ObjectManager.getRayList()) {
-            RayRenderer.render(ray)
-            //text(ray.intersectsLensPlane(lens).toString(), ray.start.x, ray.start.y)
-        }
-
     }
 
     fun getRenderContext() : PGraphics{

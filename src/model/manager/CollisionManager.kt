@@ -2,9 +2,8 @@ package model.manager
 
 import model.Circle
 import model.Lens
-import model.Ray
+import model.light.Ray
 import model.Side
-import processing.core.PGraphics
 import processing.core.PVector
 import kotlin.math.pow
 

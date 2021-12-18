@@ -1,6 +1,6 @@
 package model.rayCreator
 
-import model.Ray
+import model.light.Ray
 import processing.core.PVector
 
 class RayCreatorAngle : ARayCreator() {

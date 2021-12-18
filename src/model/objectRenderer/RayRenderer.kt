@@ -1,6 +1,6 @@
 package model.objectRenderer
 
-import model.Ray
+import model.light.Ray
 import processing.core.PGraphics
 import view.RenderContextProvider
 import java.awt.Color
